@@ -1,0 +1,21 @@
+# .rubocop.yml
+
+# Enable/Disable specific cops
+Layout/LineLength:
+  Max: 100 # Set the max line length to 100
+Metrics/MethodLength:
+  Max: 20 # Limit method length to 15 lines
+Metrics/AbcSize:
+  Max: 40
+Metrics/PerceivedComplexity:
+  Max: 10
+Metrics/CyclomaticComplexity:
+  Max: 10
+Style/StringLiterals:
+  EnforcedStyle: single_quotes # Enforce single quotes for strings
+Style/Documentation:
+  Enabled: false
+Metrics/BlockLength:
+  Enabled: false # Disable the rule for block length
+AllCops:
+  NewCops: enable
