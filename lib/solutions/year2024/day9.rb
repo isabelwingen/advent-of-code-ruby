@@ -7,45 +7,102 @@ class Day9 < Day
     numbers = read_input.strip.chars.map(&:to_i)
     start, last = build_linked_list(numbers)
     start, last = move_last(start, last) until start.compact?
-    start.to_s
+    checksum(start)
+  end
+
+  def part2
+    numbers = read_input.strip.chars.map(&:to_i)
+    start, last = build_linked_list(numbers)
+    move_whole(start, last)
+    checksum(start)
   end
 
   private
 
+  def checksum(start)
+    sum = 0
+    id = 0
+    current = start
+    until current.nil?
+      unless current.value.nil?
+        id.upto(id + current.size - 1) do |i|
+          sum += current.value * i
+        end
+      end
+      id += current.size
+      current = current.succ
+    end
+    sum
+  end
+
+  def move_whole(start, last)
+    current = last
+    until current == start
+      next_node = current.pre
+      find_place_and_move(start, current) unless current.value.nil?
+      current = next_node
+    end
+  end
+
+  def find_place_and_move(start, current)
+    new_place = find_place_with_enough_space(start, current)
+    return if new_place.nil?
+
+    add_to_new_space(new_place, current)
+    current.value = nil
+  end
+
+  def add_to_new_space(new_space, current)
+    residue = new_space.size - current.size
+    new_space.value = current.value
+    new_space.size = current.size
+    add_node(new_space, Node.new(nil, nil, nil, residue)) unless residue.zero?
+  end
+
+  def find_place_with_enough_space(start, current)
+    place = start.succ
+    until place.free? && place.size >= current.size
+      return nil if place == current
+
+      place = place.succ
+    end
+    place
+  end
+
   def move_last(start, last)
     new_last = last.pre
     last.pre.succ = nil
-    fill_in(start, last.value, last.size)
+    fill_in(start, last.value, last.size) unless last.value.nil?
     [start, new_last]
   end
 
   def fill_in(start, value, size)
-    if start.succ.nil? # reached the end
-      if start.free?
-        start.value = value
-        start.size = size
+    current = start
+    n = size
+    while n.positive?
+      current = current.build_succ until current.empty_space?
+      current.value = value
+      if n == current.size
+        n = 0
+      elsif n < current.size
+        # pre -> current -> succ
+        y = Node.new(current, current.succ, nil, current.size - n)
+        current.size = n
+        current.succ = y
+        y.succ.pre = y
+        n = 0
       else
-        new_node = Node.new(start, nil, value, size)
-        start.succ = new_node
+        n -= current.size
       end
-      return start
     end
-    return fill_in(start.succ, value, size) unless start.free?
+  end
 
-    return fill_in(start.succ, value, size) if start.no_space?
-
-    if size < start.size
-      pre = start.pre
-      succ = start.succ
-      x = Node.new(pre, nil, value, size)
-      pre.succ = x
-      y = Node.new(x, succ, nil, start.size - size)
-      x.succ = y
-      succ.pre = y
-    else
-      start.value = value
-      fill_in(start, value, size - start.size) if size != start.size
-    end
+  def add_node(before, node)
+    succ = before.succ
+    before.succ = node
+    node.pre = before
+    node.succ = succ
+    succ.pre = node
   end
 
   def build_linked_list(numbers)
@@ -54,9 +111,9 @@ class Day9 < Day
     numbers.each_with_index do |number, index|
       current.succ = if index.odd? # free space
                        Node.new(current, nil, nil, number)
-                      else
-                        Node.new(current, nil, index / 2, number)
-                      end
+                     else
+                       Node.new(current, nil, index / 2, number)
+                     end
       current = current.succ
     end
     [start, current]
@@ -85,22 +142,32 @@ class Day9 < Day
     end
 
     def compact?
-      if empty_space?
-        false
-      elsif @succ.nil?
-        true
-      else
-        @succ.compact?
+      current = self
+      until current.nil?
+        return false if current.empty_space?
+
+        current = current.succ
       end
+      true
+    end
+
+    def build_succ
+      if @succ.nil?
+        new_node = Node.new(self, nil, nil, 1)
+        self.succ = new_node
+      end
+      @succ
     end
 
     def to_s
-      string = (@value.to_s.chars.first || '.') * @size
-      if @succ.nil?
-        string
-      else
-        "#{string}#{@succ.to_s}"
+      string = ''
+      current = self
+      until current.nil?
+        value = current.value || '.'
+        string += (value.to_s * current.size)
+        current = current.succ
       end
+      string
     end
   end
 end
