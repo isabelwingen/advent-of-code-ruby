@@ -15,7 +15,7 @@ class Grid
     @current_column = col
   end
 
-  def currrent_position
+  def current_position
     [@current_row, @current_column]
   end
 
@@ -34,11 +34,11 @@ class Grid
   end
 
   def current_value=(value)
-    @values[currrent_position] = value
+    @values[current_position] = value
   end
 
   def current_value
-    @values[currrent_position]
+    @values[current_position]
   end
 
   def display
